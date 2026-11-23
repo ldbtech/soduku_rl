@@ -26,7 +26,7 @@ Python environment:
 cd envir
 python3 -m venv venv
 source venv/bin/activate
-pip install numpy
+pip install -r ../requirements.txt
 ```
 
 Frontend:
@@ -40,7 +40,15 @@ Optional: copy `frontend/.env.example` to `frontend/.env` to point at a real bac
 
 # run instructions
 
-Run the Python environment CLI:
+Run everything with one command (installs Python deps from `requirements.txt`, installs frontend deps if needed, then starts the frontend):
+
+```bash
+./run.sh
+```
+
+Then open http://localhost:5173 in a browser.
+
+Run the Python environment directly:
 
 ```bash
 cd envir
@@ -55,14 +63,3 @@ cd envir
 source venv/bin/activate
 python test.py
 ```
-
-Run the frontend:
-
-```bash
-cd frontend
-npm run dev
-```
-
-Then open http://localhost:5173 in a browser.
-
-Other frontend commands: `npm run build`, `npm run preview`, `npm run typecheck`.
