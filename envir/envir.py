@@ -1,6 +1,7 @@
 import random 
 import numpy as np
-
+import json
+from rule_engine import RuleEngine
 """
     The goal of this class to have complete sudoku setup with 
     any parameters.
@@ -13,10 +14,16 @@ import numpy as np
 """
 
 class Sudoku:
-    def __init__(self, num_cols: int = 9, num_rows: int = 9):
+    def __init__(
+            self, 
+            num_cols: int = 9, 
+            num_rows: int = 9,
+            num_symbols: int = 9):
         self.num_cols = num_cols
         self.num_rows = num_rows
-    
+        self.num_symbols = num_symbols 
+        self.rule_engine = RuleEngine()
+
     def init_state(self) -> np.ndarray:
         return np.zeros((self.num_rows, self.num_cols), dtype=int)
 
@@ -35,8 +42,21 @@ class Sudoku:
 
         return min(candidates, key=lambda pair: abs(pair[0] - pair[1]))
 
-    def validate_rule(self) -> bool:
-        pass
+    def validate_sudoku(self, board: np.ndarray) -> bool:
+        """
+            - Validate board dimentions 
+            - Subgrid dimentions 
+            - Sudoku rules : does this board violate any rows, columns, or subgrid constrains 
+            
+        """
+
+        return self.rule_engine.validate(
+                board,
+                (self.num_rows, self.num_cols),
+                self.num_symbols,
+               self.calculate_subgrid()
+       )
+
 
     def rules(self):
         pass

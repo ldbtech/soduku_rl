@@ -1,1 +1,68 @@
-# soduku_rl
+# overview
+
+We are building a Reinforcement Learning agent that plays the Sudoku game in any format (any board size / symbols).
+
+Goal: train an RL agent (starting with Q-learning) that learns to solve Sudoku boards step by step, with a Python environment for training and a React frontend to play and watch the agent.
+
+What we have done so far:
+
+- `envir/` — Python Sudoku environment (CLI-first, before moving to TypeScript):
+  - `Sudoku` class with configurable `num_cols`, `num_rows`, `num_symbols`
+  - `init_state()` — empty board as numpy array
+  - `calculate_subgrid()` — auto subgrid shape for any board size
+  - `validate_sudoku()` + `RuleEngine` (`rules.json`) — dimension check, value range, unique row / column / subgrid
+  - `test.py` — 10 passing checks (valid board, empty board, row/column/subgrid duplicates, invalid symbols, wrong dimensions, non-integer board, rectangular board)
+  - Still TODO: `rules()`, `fill_empty_cell()`, `steps()`, `reset()`, `action()` — the RL step/action/reward loop and Q-learning agent itself
+- `frontend/` — React + TypeScript + Tailwind + Vite app:
+  - Playable Sudoku board (presets + custom sizes, notes, hints, mistakes, timer, light/dark mode)
+  - Backend-ready API layer (`SudokuBackend` interface with mock + HTTP implementations)
+  - RL agent panel to watch the AI solve step by step (mocked for now)
+
+# setup
+
+Python environment:
+
+```bash
+cd envir
+python3 -m venv venv
+source venv/bin/activate
+pip install numpy
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm install
+```
+
+Optional: copy `frontend/.env.example` to `frontend/.env` to point at a real backend. By default it uses the mock backend.
+
+# run instructions
+
+Run the Python environment CLI:
+
+```bash
+cd envir
+source venv/bin/activate
+python main.py
+```
+
+Run the rule-engine checks:
+
+```bash
+cd envir
+source venv/bin/activate
+python test.py
+```
+
+Run the frontend:
+
+```bash
+cd frontend
+npm run dev
+```
+
+Then open http://localhost:5173 in a browser.
+
+Other frontend commands: `npm run build`, `npm run preview`, `npm run typecheck`.

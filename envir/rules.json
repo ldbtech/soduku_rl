@@ -1,0 +1,39 @@
+
+{
+    "rules": [
+        {
+            "name": "valid_dimensions",
+            "type": "dimension_check",
+            "enabled": true
+        },
+        {
+            "name": "valid_symbols",
+            "type": "value_range",
+            "enabled": true,
+            "min": 0,
+            "max": 9
+        },
+        {
+            "name": "unique_rows",
+            "type": "unique",
+            "scope": "row",
+            "ignore": 0,
+            "enabled": true
+        },
+        {
+            "name": "unique_columns",
+            "type": "unique",
+            "scope": "column",
+            "ignore": 0,
+            "enabled": true
+        },
+        {
+            "name": "unique_subgrids",
+            "type": "unique",
+            "scope": "subgrid",
+            "ignore": 0,
+            "enabled": true
+        }
+    ]
+}
+
