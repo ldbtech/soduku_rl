@@ -45,6 +45,20 @@ function randomId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
 }
 
+/**
+ * Which placeholder policy the mock backend plays with.
+ * - "random": clicks a random empty cell with a random digit (current
+ *   placeholder until the real RL policy lands).
+ * - "solver": plays correct solution digits, most-constrained cells first.
+ * Switch with `VITE_AGENT_MODE=solver`; the real RL policy will arrive as
+ * the HTTP backend, which ignores this entirely.
+ */
+export type MockAgentMode = "random" | "solver";
+
+export function mockAgentMode(): MockAgentMode {
+  return import.meta.env.VITE_AGENT_MODE === "solver" ? "solver" : "random";
+}
+
 export class MockSudokuBackend implements SudokuBackend {
   readonly id = "mock" as const;
 
@@ -241,6 +255,15 @@ export class MockSudokuBackend implements SudokuBackend {
       }
     }
     if (empties.length === 0) return { move: null, done: true };
+    if (mockAgentMode() === "random") {
+      // Placeholder policy: pure random clicking until the RL agent lands.
+      const picked = empties[Math.floor(Math.random() * empties.length)];
+      const move: AgentMove = {
+        ...picked,
+        value: 1 + Math.floor(Math.random() * spec.size),
+      };
+      return { move, done: false };
+    }
     // RL-style exploration: sample an empty cell, prefer constrained ones.
     const scored = empties.map((cell) => ({
       cell,

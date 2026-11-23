@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Pause,
   Play,
@@ -16,15 +16,12 @@ import { Header } from "./components/layout/Header";
 import { AgentPanel } from "./components/sudoku/AgentPanel";
 import { GameOverDialog } from "./components/sudoku/GameOverDialog";
 import { GameStats } from "./components/sudoku/GameStats";
-import { GameToolbar } from "./components/sudoku/GameToolbar";
 import { NewGameDialog } from "./components/sudoku/NewGameDialog";
-import { NumberPad } from "./components/sudoku/NumberPad";
 import { RulesPanel } from "./components/sudoku/RulesPanel";
 import { SudokuBoard } from "./components/sudoku/SudokuBoard";
 import { useReinforcementAgent } from "./hooks/useReinforcementAgent";
 import { useSudokuGame } from "./hooks/useSudokuGame";
 import { useTheme } from "./hooks/useTheme";
-import { remainingCounts } from "./lib/sudoku";
 
 const backend = getBackend();
 
@@ -58,18 +55,39 @@ export default function App() {
     }
   }, [status]);
 
+  // The agent is the only player: every fresh board gets a new run id so
+  // the autostart effect below picks it up exactly once.
+  const [runId, setRunId] = useState(0);
+  const autoStartedRun = useRef(-1);
+
   // Agent must stand down whenever the board is replaced or reset.
   const resetBoardAndAgent = () => {
     agent.resetAgent();
     game.reset();
+    setRunId((id) => id + 1);
   };
 
   const startGame = async (size: number, diff: typeof difficulty) => {
     agent.resetAgent();
+    setRunId((id) => id + 1);
     return game.newGame(size, diff);
   };
 
-  // Global keyboard controls.
+  // Humans only watch: as soon as a fresh board is playable, the agent
+  // starts playing on its own. Manual pause/resume stays in the agent panel.
+  useEffect(() => {
+    if (
+      game.status === "playing" &&
+      runId !== autoStartedRun.current &&
+      agent.agentStatus === "idle"
+    ) {
+      autoStartedRun.current = runId;
+      agent.play();
+    }
+  });
+
+  // Spectator keyboard controls: the agent plays, humans can only pause
+  // the viewing and dismiss dialogs.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -80,60 +98,18 @@ export default function App() {
         return;
       }
       switch (e.key) {
-        case "ArrowUp":
-          e.preventDefault();
-          game.moveSelection(-1, 0);
-          break;
-        case "ArrowDown":
-          e.preventDefault();
-          game.moveSelection(1, 0);
-          break;
-        case "ArrowLeft":
-          e.preventDefault();
-          game.moveSelection(0, -1);
-          break;
-        case "ArrowRight":
-          e.preventDefault();
-          game.moveSelection(0, 1);
-          break;
-        case "Backspace":
-        case "Delete":
-        case "0":
-          e.preventDefault();
-          game.erase();
-          break;
-        case "Escape":
-          game.selectCell(null);
-          break;
-        case "n":
-        case "N":
-          game.toggleNotesMode();
-          break;
-        case "h":
-        case "H":
-          void game.hint();
-          break;
-        case "u":
-        case "U":
-          game.undo();
-          break;
         case "p":
         case "P":
           if (status === "playing") game.pause();
           else if (status === "paused") game.resume();
           break;
         default:
-          if (/^[1-9]$/.test(e.key)) game.inputDigit(e.key);
+          break;
       }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [game, status, newGameOpen, settingsOpen, gameOverDismissed]);
-
-  const counts = useMemo(() => {
-    if (!grid || !spec) return [];
-    return remainingCounts(grid, spec);
-  }, [grid, spec]);
 
   const outcome = status === "won" || status === "lost" ? status : null;
   const boardInteractive = status === "playing";
@@ -171,7 +147,7 @@ export default function App() {
               <div className="mb-3 flex items-center justify-between gap-2 px-1 pt-1">
                 <div className="flex items-center gap-2">
                   <SectionTitle>Board</SectionTitle>
-                  {game.notesMode && <Badge variant="info">Notes</Badge>}
+                  <Badge variant="info">Agent plays</Badge>
                   {status === "paused" && <Badge variant="warning">Paused</Badge>}
                 </div>
                 <div className="flex items-center gap-1">
@@ -245,36 +221,16 @@ export default function App() {
                   agentLastMove={game.agentLastMove}
                   highlightRelated={highlightRelated}
                   highlightSame={highlightSame}
-                  interactive={boardInteractive}
-                  onSelect={game.selectCell}
+                  interactive={false}
+                  onSelect={() => {}}
                 />
               )}
             </Card>
 
             {board && (
-              <>
-                <Card>
-                  <GameToolbar
-                    notesMode={game.notesMode}
-                    canUndo={game.canUndo}
-                    hintLoading={game.hintLoading}
-                    disabled={!boardInteractive}
-                    onToggleNotes={game.toggleNotesMode}
-                    onErase={game.erase}
-                    onUndo={game.undo}
-                    onHint={() => void game.hint()}
-                  />
-                </Card>
-                <NumberPad
-                  size={board.spec.size}
-                  counts={counts}
-                  onInput={game.inputValue}
-                  disabled={!boardInteractive}
-                />
-                <p className="hidden text-center text-xs text-zinc-500 lg:block dark:text-zinc-400">
-                  Keys: 1–{board.spec.size} enter · arrows move · N notes · H hint · U undo · P pause
-                </p>
-              </>
+              <p className="hidden text-center text-xs text-zinc-500 lg:block dark:text-zinc-400">
+                The agent plays every move — sit back and watch · P pauses the viewing
+              </p>
             )}
           </div>
 
@@ -295,8 +251,8 @@ export default function App() {
               <Card>
                 <SectionTitle>Game</SectionTitle>
                 <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
-                  No puzzle yet. Start a new game to play or to watch the AI
-                  solver take it on.
+                  No puzzle yet. Start a new game and watch the agent play it —
+                  humans only spectate here.
                 </p>
                 <Button
                   size="sm"
@@ -320,7 +276,8 @@ export default function App() {
         </div>
 
         <footer className="mt-8 text-center text-xs text-zinc-500 dark:text-zinc-500">
-          Puzzles, rules, and AI moves stream from the backend API
+          The agent plays every move — humans just watch · Puzzles and moves stream
+          from the backend API
           {backend.id === "mock" ? " (simulated locally for now)" : ""} · {spec ? `${spec.size}×${spec.size}` : "no board"}
         </footer>
       </main>

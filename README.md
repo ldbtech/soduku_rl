@@ -14,9 +14,10 @@ What we have done so far:
   - `test.py` — 10 passing checks (valid board, empty board, row/column/subgrid duplicates, invalid symbols, wrong dimensions, non-integer board, rectangular board)
   - Still TODO: `rules()`, `fill_empty_cell()`, `steps()`, `reset()`, `action()` — the RL step/action/reward loop and Q-learning agent itself
 - `frontend/` — React + TypeScript + Tailwind + Vite app:
-  - Playable Sudoku board (presets + custom sizes, notes, hints, mistakes, timer, light/dark mode)
-  - Backend-ready API layer (`SudokuBackend` interface with mock + HTTP implementations)
-  - RL agent panel to watch the AI solve step by step (mocked for now)
+  - Watch-only Sudoku board: the agent is the only player, humans pick the board size and spectate (no human input, agent auto-starts)
+  - Placeholder policy: mock backend clicks random cells with random digits (`VITE_AGENT_MODE=random`, switch to `solver` for correct play)
+  - Backend-ready API layer (`SudokuBackend` interface with mock + HTTP implementations) for the real RL policy later
+  - Agent console (step, pause/resume, speed, move log), progress stats, timer, light/dark mode
 
 # setup
 
@@ -40,7 +41,7 @@ Optional: copy `frontend/.env.example` to `frontend/.env` to point at a real bac
 
 # run instructions
 
-Run everything with one command (installs Python deps from `requirements.txt`, installs frontend deps if needed, then starts the frontend):
+Run everything with one command (creates `envir/venv` on first run, installs Python deps from `requirements.txt`, runs the Python environment, installs frontend deps if needed, then starts the frontend):
 
 ```bash
 ./run.sh

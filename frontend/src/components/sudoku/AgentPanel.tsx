@@ -1,4 +1,5 @@
 import { Bot, Pause, Play, StepForward } from "lucide-react";
+import { mockAgentMode } from "../../api/mockBackend";
 import type { AgentStatus } from "../../types/sudoku";
 import { formatConfidence } from "../../lib/format";
 import type { ReinforcementAgent } from "../../hooks/useReinforcementAgent";
@@ -27,12 +28,20 @@ const STATUS_BADGE: Record<AgentStatus, { variant: BadgeVariant; label: string; 
 };
 
 /**
- * Reinforcement-learning agent console. Every move is requested from the
- * backend policy — this panel only renders and paces them.
+ * Reinforcement-learning agent console. The agent is the only player — every
+ * move is requested from the backend policy, this panel only renders and
+ * paces them for human spectators.
  */
 export function AgentPanel({ agent, backendId, disabled }: AgentPanelProps) {
   const { agentStatus, speed, log, error } = agent;
   const badge = STATUS_BADGE[agentStatus];
+  const isRandomPlaceholder = backendId === "mock" && mockAgentMode() === "random";
+  const policyLabel =
+    backendId === "http"
+      ? "Live policy"
+      : isRandomPlaceholder
+        ? "Random agent"
+        : "Simulated policy";
   const last = log.length > 0 ? log[log.length - 1] : null;
   const canStep = !disabled && (agentStatus === "idle" || agentStatus === "paused");
   const canPlay = !disabled && (agentStatus === "idle" || agentStatus === "paused");
@@ -43,11 +52,11 @@ export function AgentPanel({ agent, backendId, disabled }: AgentPanelProps) {
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2">
           <Bot className="size-4 text-blue-600 dark:text-blue-400" aria-hidden />
-          <SectionTitle>AI solver</SectionTitle>
+          <SectionTitle>Agent</SectionTitle>
         </span>
         <span className="flex gap-1.5">
           <Badge variant={backendId === "mock" ? "neutral" : "success"}>
-            {backendId === "mock" ? "Simulated policy" : "Live policy"}
+            {policyLabel}
           </Badge>
           <Badge variant={badge.variant} dot={badge.pulse}>
             {badge.label}
@@ -56,8 +65,9 @@ export function AgentPanel({ agent, backendId, disabled }: AgentPanelProps) {
       </div>
 
       <p className="mt-2 text-[13px] leading-5 text-zinc-600 dark:text-zinc-300">
-        A reinforcement-learning policy on the backend picks each move. Step
-        through it, or press play and watch.
+        {isRandomPlaceholder
+          ? "Placeholder policy: the agent clicks random cells with random digits until the real RL policy lands. It starts on its own — sit back and watch."
+          : "A reinforcement-learning policy on the backend picks each move. It starts on its own — sit back and watch."}
       </p>
 
       {disabled ? (
